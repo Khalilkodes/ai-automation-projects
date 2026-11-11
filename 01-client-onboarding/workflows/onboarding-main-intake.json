@@ -1,0 +1,1375 @@
+{
+  "name": "[Onboarding] Main | Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Client intake",
+        "formDescription": "Tell us about your business so we can get you set up.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "full_name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "business_name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "business_type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "retail"
+                  },
+                  {
+                    "option": "services"
+                  },
+                  {
+                    "option": "hospitality"
+                  },
+                  {
+                    "option": "transport"
+                  },
+                  {
+                    "option": "large"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "path": "client-intake"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        -448
+      ],
+      "id": "14a88f81-da15-4431-8632-36511eabd6bf",
+      "name": "IntakeForm",
+      "webhookId": "112b8fe4-8671-404f-b5df-c2e1f6d7f32f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e5049ce-4c9c-41f1-8b6e-f1e867f98d2b",
+              "name": "firm_name",
+              "value": "Riverside Bookkeeping",
+              "type": "string"
+            },
+            {
+              "id": "cf0842cb-dd65-4c96-9a16-2b68b5eebb79",
+              "name": "from_email",
+              "value": "onboarding@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "bcea6bc5-faac-40da-8588-59a8c624c1b8",
+              "name": "staff_email",
+              "value": "staff@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "b4cda43c-3d49-4989-9bdc-ef53d75b0975",
+              "name": "collect_docs_owner",
+              "value": "Binta",
+              "type": "string"
+            },
+            {
+              "id": "90457e0a-f151-40e8-81ce-c1086c2cf53b",
+              "name": "kickoff_owner",
+              "value": "Ebrima",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -448
+      ],
+      "id": "3095e1d6-068f-48e5-aea2-d7e4a0052ac8",
+      "name": "SetConfig"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2e93884-9fa3-41d4-ac5a-7c744eb87ffd",
+              "name": "email_clean",
+              "value": "={{ $json.email.trim().toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        -448
+      ],
+      "id": "5ab91dd9-21a7-42ea-b738-8ebfd286cd5d",
+      "name": "CleanInput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e0afcdaa-527b-4e56-8780-812fc6abd59f",
+              "leftValue": "={{ $json.email_clean }}",
+              "rightValue": "=^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -448
+      ],
+      "id": "9938d770-8fdf-4cc8-b4ff-cfdfae77e0bc",
+      "name": "IsEmailValid?"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "We couldn't process your request",
+        "completionMessage": "The email address doesn't look valid. Please check it and try again.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1056,
+        -384
+      ],
+      "id": "953048e3-cc04-405c-8bc3-dea70a95ecb8",
+      "name": "Reject:InvalidEmail",
+      "webhookId": "42452a1d-43b7-43c8-958e-42f66293ff98"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "search",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "returnAll": true,
+        "options": {
+          "where": "=(email,eq,{{ $json.email_clean }})"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        912,
+        -768
+      ],
+      "id": "4b6cc0b5-7ec7-403d-888f-f96b7cd62819",
+      "name": "FindExistingClient",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "11446165-1f82-4cc9-b0f7-83772c8e99d7",
+              "leftValue": "={{ $json.fields?.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        -768
+      ],
+      "id": "944ca11a-2b2d-4d1a-9cfc-f8caf1f5a464",
+      "name": "IsDuplicate?"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "You're already registered",
+        "completionMessage": "We already have an account for this email. Our team will be in touch.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1824,
+        -864
+      ],
+      "id": "3eba4cdf-b347-46c8-97c1-7ba5cd2d76dc",
+      "name": "Reject:Duplicate",
+      "webhookId": "da659026-ea0a-4d33-be1d-f7028a615ab1"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "full_name": "={{ $('CleanInput').first().json.full_name }}",
+            "email": "={{ $('CleanInput').first().json.email_clean }}",
+            "business_name": "={{ $('CleanInput').first().json.business_name }}",
+            "business_type": "={{ $('CleanInput').first().json.business_type }}",
+            "status": "awaiting_documents",
+            "created_at": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_name",
+              "displayName": "business_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_type",
+              "displayName": "business_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_1_sent_at",
+              "displayName": "reminder_1_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reminder_2_sent_at",
+              "displayName": "reminder_2_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1376,
+        -416
+      ],
+      "id": "7a8517ef-d344-437a-a378-dc647234987b",
+      "name": "CreateClientRecord",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('CleanInput').first().json.email_clean }}",
+            "event": "client_created",
+            "details": "intake form received",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1600,
+        -416
+      ],
+      "id": "ff7b4aff-3337-4172-8d72-d967cbdd5d2a",
+      "name": "LogClientCreated",
+      "executeOnce": false,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const client = $('CleanInput').first().json;\nconst cfg = $('SetConfig').first().json;\nconst due = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);\n\nreturn [\n  { json: { client_email: client.email_clean, task: 'Collect documents', owner: cfg.collect_docs_owner, due_date: due(7), done: false } },\n  { json: { client_email: client.email_clean, task: 'Schedule kickoff call', owner: cfg.kickoff_owner, due_date: due(12), done: false } },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        -416
+      ],
+      "id": "8aaf021f-ced8-425c-a505-002b02829f35",
+      "name": "BuildTaskList"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9p433uk9lqxdmv",
+          "mode": "list",
+          "cachedResultName": "tasks",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9p433uk9lqxdmv"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $json.client_email }}",
+            "task": "={{ $json.task }}",
+            "owner": "={{ $json.owner }}",
+            "due_date": "={{ $json.due_date }}",
+            "done": "={{ $json.done }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "task",
+              "displayName": "task",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "done",
+              "displayName": "done",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        2032,
+        -416
+      ],
+      "id": "d59a9bdc-4d4d-4eac-99b2-c6529480a185",
+      "name": "CreateTaskRecords",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const client = $('CleanInput').first().json;\nconst standard = ['id_document', 'business_registration', 'bank_statements', 'tax_records'];\nconst extra = ['audited_financials', 'payroll_records'];\nconst docs = client.business_type === 'large' ? [...standard, ...extra] : standard;\n\nreturn docs.map(doc_type => ({\n  json: { client_email: client.email_clean, doc_type, status: 'pending' },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2256,
+        -416
+      ],
+      "id": "34e9a4e4-85fe-4300-aa59-25144a88ba71",
+      "name": "BuildDocumentList",
+      "notesInFlow": true,
+      "notes": "Document lists are in code. Moving them to config is a possible improvement."
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "mvkcv0vndube2ul",
+          "mode": "list",
+          "cachedResultName": "documents",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/mvkcv0vndube2ul"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $json.client_email }}",
+            "doc_type": "={{ $json.doc_type }}",
+            "status": "={{ $json.status }}",
+            "received_at": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "doc_type",
+              "displayName": "doc_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        2480,
+        -416
+      ],
+      "id": "cc91382b-2cbb-46be-b6b7-a0679d9af139",
+      "name": "CreateDocumentRecords",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event": "welcome_email_sent",
+            "details": "welcome email sent",
+            "client_email": "={{ $('CleanInput').first().json.email_clean }}\n",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        3024,
+        -416
+      ],
+      "id": "a130aa29-4e98-448b-82ce-1d4d68a5c283",
+      "name": "LogWelcomeEmailSent",
+      "executeOnce": false,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('SetConfig').first().json.from_email }}",
+        "toEmail": "={{ $('CleanInput').first().json.email_clean }}",
+        "subject": "=Welcome to {{ $('SetConfig').first().json.firm_name }}",
+        "html": "=Hi {{ $('CleanInput').first().json.full_name }},\n\nWelcome to {{ $('SetConfig').first().json.firm_name }}. To finish onboarding, we need these documents:\n\n{{ $('BuildDocumentList').all().map(i => '- ' + i.json.doc_type.replace(/_/g, ' ')).join('\\n') }}\n\nPlease reply to this email with them attached.\n\n{{ $('SetConfig').first().json.firm_name }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2816,
+        -416
+      ],
+      "id": "2ce8a571-d097-475e-9669-9c94f77f8d7c",
+      "name": "SendWelcomeEmail",
+      "webhookId": "1c85b220-c8e8-4a12-9be6-021a768dc5b1",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      },
+      "notes": "Execute Once: one email per submission."
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Thanks, you're registered",
+        "completionMessage": "Check your email for the list of documents we need.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        3232,
+        -416
+      ],
+      "id": "5964e8f8-3a60-46e8-a384-3c9b707a034f",
+      "name": "ShowSuccess",
+      "webhookId": "8ef4484e-02f0-451a-a4f8-8cfe4321ba0d"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('CleanInput').first().json.email_clean }}",
+            "event": "invalid_email_rejected",
+            "details": "submitted email failed format check",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        848,
+        -384
+      ],
+      "id": "260219f3-47b2-408e-9ec8-475f9b613aa9",
+      "name": "LogInvalidEmail",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event": "duplicate_rejected",
+            "details": "email already registered",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "client_email": "={{ $('CleanInput').first().json.email_clean }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1344,
+        -864
+      ],
+      "id": "9d24c3f3-6dbb-4150-9cca-e13d7d83bf27",
+      "name": "LogDuplicateAttempt",
+      "retryOnFail": false,
+      "executeOnce": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('SetConfig').first().json.from_email }}",
+        "toEmail": "={{ $('SetConfig').first().json.staff_email }}",
+        "subject": "=Duplicate intake attempt: {{ $('CleanInput').first().json.email_clean }}",
+        "html": "=Someone tried to register with an email that already has a client record. Name given: {{ $('CleanInput').first().json.full_name }}. Please check whether this is the same person.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1584,
+        -864
+      ],
+      "id": "c42071ce-1d6a-47e1-a227-178f99d54d56",
+      "name": "NotifyStaffDuplicate",
+      "webhookId": "7c5000ff-0599-4fb8-904d-c59f4e16fbc7",
+      "executeOnce": true,
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Client Intake\nNew client submits the form. The workflow validates it, rejects bad or duplicate entries, creates the client's records, sends a welcome email, and logs every outcome.\n**Data:** NocoDB (clients, documents, tasks, activity_log) | **Email:** Mailpit (test only)\n**Errors:** shared handler emails staff",
+        "height": 272,
+        "width": 800,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -1280
+      ],
+      "id": "895b45e4-582d-4450-8d01-85c6f60b9d25",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Receive and clean\n**In:** form answers\n**Logic:** config values live in SetConfig (no hard-coding). The email is trimmed and lower-cased so \"A@x.com \" and \"a@x.com\" match.\n**Out:** email_clean for every later step\n**Note:** email is a Text field on purpose, so bad input reaches the server-side check",
+        "height": 368,
+        "width": 592,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -656
+      ],
+      "id": "28936ae9-6255-4486-94a5-a1decfdddd33",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n## 2. Validate email\n**Logic:** regex format check (not proof the address exists)\n**If invalid:** log \"invalid_email_rejected\", show a rejection page\n**Why log first:** the form's completion node ends the request, so anything to record must happen before it",
+        "height": 384,
+        "width": 592,
+        "color": "#BD0000"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -464
+      ],
+      "id": "fcd1871b-d84c-4d00-a542-4ec92b75d03d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Duplicate check\n**Logic:** search clients by email. Always Output Data is ON so \"no match\" still reaches the IF.\n**If duplicate:** log it, email staff, show rejection\n**Gotcha:** NocoDB nests columns under `fields`, so the check reads $json.fields?.email\n**Execute Once ON** on the log and alert: one entry per attempt",
+        "height": 416,
+        "width": 1152
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -1040
+      ],
+      "id": "629f7f87-c43a-4b3b-8df1-3b450652f235",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n## 4. Create records\n**Out:** 1 client (status awaiting_documents), 2 tasks, 4 documents (6 for \"large\" businesses)\n**How:** Code nodes output several items; the NocoDB node after each runs once per item.\n**Columns mapped by hand:** auto-map left the document rows empty",
+        "height": 384,
+        "width": 1312,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -464
+      ],
+      "id": "11357f8f-53ec-4a08-82c8-d0f79261fac8",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## 5. Welcome and finish\n**Logic:** one email listing the required documents. Execute Once ON (one email, not one per document). Retry On Fail ON.\n**Out:** welcome email, log entry, success page\n**Limit:** template email. An AI-written version is a planned extension.",
+        "height": 416,
+        "width": 704,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2752,
+        -640
+      ],
+      "id": "1a940db6-1afb-47fe-b8c7-da45ea2d2467",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IntakeForm": {
+      "main": [
+        [
+          {
+            "node": "SetConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SetConfig": {
+      "main": [
+        [
+          {
+            "node": "CleanInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CleanInput": {
+      "main": [
+        [
+          {
+            "node": "IsEmailValid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsEmailValid?": {
+      "main": [
+        [
+          {
+            "node": "FindExistingClient",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LogInvalidEmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FindExistingClient": {
+      "main": [
+        [
+          {
+            "node": "IsDuplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsDuplicate?": {
+      "main": [
+        [
+          {
+            "node": "LogDuplicateAttempt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CreateClientRecord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reject:Duplicate": {
+      "main": [
+        []
+      ]
+    },
+    "CreateClientRecord": {
+      "main": [
+        [
+          {
+            "node": "LogClientCreated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogClientCreated": {
+      "main": [
+        [
+          {
+            "node": "BuildTaskList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildTaskList": {
+      "main": [
+        [
+          {
+            "node": "CreateTaskRecords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateTaskRecords": {
+      "main": [
+        [
+          {
+            "node": "BuildDocumentList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildDocumentList": {
+      "main": [
+        [
+          {
+            "node": "CreateDocumentRecords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateDocumentRecords": {
+      "main": [
+        [
+          {
+            "node": "SendWelcomeEmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendWelcomeEmail": {
+      "main": [
+        [
+          {
+            "node": "LogWelcomeEmailSent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogWelcomeEmailSent": {
+      "main": [
+        [
+          {
+            "node": "ShowSuccess",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogInvalidEmail": {
+      "main": [
+        [
+          {
+            "node": "Reject:InvalidEmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogDuplicateAttempt": {
+      "main": [
+        [
+          {
+            "node": "NotifyStaffDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NotifyStaffDuplicate": {
+      "main": [
+        [
+          {
+            "node": "Reject:Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Banjul",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "PRLM7y8N9aq8F1lz"
+  },
+  "versionId": "697aff5e-5c30-4339-bf59-3ab7b2236ef0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "nodeGroups": [],
+  "id": "a99mqodKxbHiSsBH",
+  "tags": []
+}

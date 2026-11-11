@@ -1,0 +1,1530 @@
+{
+  "name": "[Onboarding] Main | DocumentUpload",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload your documents",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "doc_type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "id_document"
+                  },
+                  {
+                    "option": "business_registration"
+                  },
+                  {
+                    "option": "bank_statements"
+                  },
+                  {
+                    "option": "tax_records"
+                  },
+                  {
+                    "option": "audited_financials"
+                  },
+                  {
+                    "option": "payroll_records"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "document",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "document-upload"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3f68e754-5735-47e8-bb53-15aad0a907af",
+      "name": "DocumentUploadForm",
+      "webhookId": "0da17e74-a73f-4737-91ae-9007ee4d6095"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "25bb10de-8a52-4eec-8d60-24d5405a583a",
+              "name": "from_email",
+              "value": "onboarding@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "cfc8464d-7a7e-47ae-ae54-1a2d478d5bed",
+              "name": "staff_email",
+              "value": "staff@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "4e33582c-e4a9-40fc-abcc-08a2ccd2fdb7",
+              "name": "firm_name",
+              "value": "Riverside Bookkeeping",
+              "type": "string"
+            },
+            {
+              "id": "50d7f32e-e090-4915-9342-b3f37d5b91d2",
+              "name": "allowed_extensions",
+              "value": "pdf,png,jpg,jpeg",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "dc999f97-1dbd-4001-93b5-3c749df4ef74",
+      "name": "SetConfig"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('SetConfig').first().json;\nconst form = $('DocumentUploadForm').first();\n\n// The uploaded file arrives as binary data under a key we don't need to know.\nconst keys = Object.keys(form.binary ?? {});\nconst file = keys.length ? form.binary[keys[0]] : null;\n\nconst fileName = file?.fileName ?? '';\nconst ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';\nconst allowed = String(cfg.allowed_extensions).split(',').map(s => s.trim().toLowerCase());\n\nreturn [{\n  json: {\n    email_clean: String(form.json.email ?? '').trim().toLowerCase(),\n    doc_type: form.json.doc_type,\n    file_name: fileName,\n    file_ext: ext,\n    file_ok: file !== null && allowed.includes(ext),\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5b573aa4-d63c-4811-8f36-9f4c7981622e",
+      "name": "CleanUploadInput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7166256b-a758-4a9e-8305-ebc79d1a3b81",
+              "leftValue": "={{ $json.file_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "598a773d-82eb-45c1-b897-3f87ac3752d5",
+      "name": "IsFileValid?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $json.email_clean }}",
+            "event": "invalid_file_rejected",
+            "details": "=file type not allowed: {{ $json.file_name }}",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        896,
+        288
+      ],
+      "id": "e41183f7-1a75-4181-aae9-8329579928b4",
+      "name": "LogInvalidFile",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "We couldn't accept that file",
+        "completionMessage": "Please upload a PDF, PNG or JPG file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1232,
+        288
+      ],
+      "id": "b4afc116-9ecd-44aa-a75c-66af89884b77",
+      "name": "Reject:InvalidFile",
+      "webhookId": "7011b4a7-83e0-4f9d-ae0b-9be3fd976a0c"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "search",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "returnAll": true,
+        "options": {
+          "where": "=(email,eq,{{ $json.email_clean }})"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "0aaa9444-c60b-49b8-8f70-ec7437cbae34",
+      "name": "FindClientForUpload",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      },
+      "notes": "Safe to repeat: searches and updates."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4f01d14f-49d8-44bb-af14-e231ec32db91",
+              "leftValue": "={{ $json.fields?.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "1ff8ebbc-d81a-4ded-b599-47b52380e343",
+      "name": "IsKnownClient?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('CleanUploadInput').first().json.email_clean }}",
+            "event": "unknown_client_rejected",
+            "details": "upload from unregistered email",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1376,
+        144
+      ],
+      "id": "f74c3582-a7f6-404e-99e3-f05801d5e0e2",
+      "name": "LogUnknownClient",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "We couldn't find your registration",
+        "completionMessage": "Please check the email address you used on the intake form.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1600,
+        144
+      ],
+      "id": "9f65840f-9d40-41e1-bf22-99cede4c846b",
+      "name": "Reject:UnknownClient",
+      "webhookId": "03ae6e04-1836-457f-86c1-709790d729b7"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "search",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "mvkcv0vndube2ul",
+          "mode": "list",
+          "cachedResultName": "documents",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/mvkcv0vndube2ul"
+        },
+        "returnAll": true,
+        "options": {
+          "where": "=(client_email,eq,{{ $('CleanUploadInput').first().json.email_clean }})~and(doc_type,eq,{{ $('CleanUploadInput').first().json.doc_type }})"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1344,
+        -112
+      ],
+      "id": "975f5fdd-b4c4-4795-ba44-a538fbfd9974",
+      "name": "FindDocumentRecord",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      },
+      "notes": "Safe to repeat: searches and updates."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c96521b6-8cad-47e4-b045-724ce74f9e50",
+              "leftValue": "={{ $json.fields?.doc_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -112
+      ],
+      "id": "e7bf2a22-f189-41b7-b2bd-1941a7bf1822",
+      "name": "IsDocumentRequired?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event": "unexpected_document_rejected",
+            "details": "={{ $('CleanUploadInput').first().json.doc_type }} is not on this client's checklist",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "client_email": "={{ $('CleanUploadInput').item.json.email_clean }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1792,
+        0
+      ],
+      "id": "92d8421e-b379-4d09-b83f-05377b34492b",
+      "name": "LogUnexpectedDocument",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "That document isn't on your list",
+        "completionMessage": "Please check the list in your welcome email.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2016,
+        0
+      ],
+      "id": "4c26998f-ae44-489c-9db1-723848467506",
+      "name": "Reject:UnexpectedDocument",
+      "webhookId": "f58f135b-ebda-405e-aaa6-1130cbae0d8a"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "mvkcv0vndube2ul",
+          "mode": "list",
+          "cachedResultName": "documents",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/mvkcv0vndube2ul"
+        },
+        "id": "={{ $json.id }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "received",
+            "received_at": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "doc_type",
+              "displayName": "doc_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1792,
+        -240
+      ],
+      "id": "ec083122-e165-4fd1-af97-fc10a7b5d133",
+      "name": "MarkDocumentReceived",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      },
+      "notes": "Safe to repeat: searches and updates."
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('CleanUploadInput').first().json.email_clean }}",
+            "event": "document_received",
+            "details": "={{ $('CleanUploadInput').first().json.doc_type }} received: {{ $('CleanUploadInput').first().json.file_name }}",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        2016,
+        -240
+      ],
+      "id": "6508fb42-72d2-44cd-93e9-ee7591e765d6",
+      "name": "LogDocumentReceived",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "search",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "mvkcv0vndube2ul",
+          "mode": "list",
+          "cachedResultName": "documents",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/mvkcv0vndube2ul"
+        },
+        "returnAll": true,
+        "options": {
+          "where": "=(client_email,eq,{{ $('CleanUploadInput').first().json.email_clean }})~and(status,neq,received)"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        2240,
+        -240
+      ],
+      "id": "6c539abd-f08e-4f7d-901a-25c03b13972b",
+      "name": "FindPendingDocuments",
+      "alwaysOutputData": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json.fields ?? {}).filter(f => f.doc_type);\nreturn [{\n  json: {\n    pending_count: rows.length,\n    remaining: rows.map(f => String(f.doc_type).replace(/_/g, ' ')),\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        -240
+      ],
+      "id": "29597e58-14cb-4460-9b57-6915126a6d44",
+      "name": "CountPending"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5d21803f-6255-45ee-8714-27c08b6c452a",
+              "leftValue": "={{ $json.pending_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2688,
+        -240
+      ],
+      "id": "4530941b-8dbf-4e6e-b0e3-309ffdf271b7",
+      "name": "AreAllReceived?"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Document received",
+        "completionMessage": "=Thanks. We still need: {{ $json.remaining.join(', ') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2912,
+        -96
+      ],
+      "id": "5b731efd-ce1c-4a4c-8c96-d3cd02d48c04",
+      "name": "ShowPartial",
+      "webhookId": "4fba44cd-937c-4827-9f68-668318dd2e86"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "id": "={{ $('FindClientForUpload').first().json.id }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "ready"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_name",
+              "displayName": "business_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_type",
+              "displayName": "business_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_1_sent_at",
+              "displayName": "reminder_1_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_2_sent_at",
+              "displayName": "reminder_2_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        2912,
+        -336
+      ],
+      "id": "ceb9562a-b531-466f-b1d5-da5755c69ce5",
+      "name": "MarkClientReady",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      },
+      "notes": "Safe to repeat: searches and updates."
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event": "client_ready",
+            "details": "all documents received",
+            "client_email": "={{ $('CleanUploadInput').first().json.email_clean }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        3136,
+        -336
+      ],
+      "id": "1ddf0d92-e460-4783-8ea0-846808ee0e51",
+      "name": "LogClientReady",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('SetConfig').first().json.from_email }}",
+        "toEmail": "={{ $('SetConfig').first().json.staff_email }}",
+        "subject": "=Client ready: {{ $('CleanUploadInput').first().json.email_clean }}",
+        "html": "={{ $('FindClientForUpload').first().json.fields.full_name }} has submitted every required document and is ready for onboarding.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3360,
+        -336
+      ],
+      "id": "da479f63-fdf2-407d-af02-9cc22ee4e1fb",
+      "name": "NotifyStaffReady",
+      "webhookId": "6c1dee31-1d31-48fc-8e03-c50c77099ded",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      },
+      "notes": "Safe to repeat: searches and updates."
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "All documents received",
+        "completionMessage": "Thank you. Our team will be in touch shortly.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        3584,
+        -336
+      ],
+      "id": "f2435553-11f3-4707-8a87-276b33b8b96a",
+      "name": "ShowAllDone",
+      "webhookId": "f77af975-c1e5-4c1a-80b6-8c19bf59cf81"
+    },
+    {
+      "parameters": {
+        "content": "# Document Upload\nA client uploads one document. The workflow checks the file and the client, updates the checklist, and marks the client ready when nothing is missing.\n**Limits:** the file itself is not stored, and only the extension is checked",
+        "height": 224,
+        "width": 656,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -752
+      ],
+      "id": "986ba0d7-5f24-4c75-a1cb-2570111adf44",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Update the checklist\nMark the document received (with timestamp), then log it.",
+        "height": 288,
+        "width": 448,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -368
+      ],
+      "id": "32b02e66-72d3-4b3d-81d0-afaf727471a6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 4. Count what's left\nSearch returns one row per missing document. CountPending collapses them into ONE item, otherwise the IF would run once per row and take both branches.\n**Partial:** show what is still missing",
+        "height": 320,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        -400
+      ],
+      "id": "5cc743c5-cd62-4ae1-9892-f2c61861ef28",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 5. Complete\nStatus becomes \"ready\" (even from \"escalated\"), log it, email staff, thank the client.",
+        "height": 320,
+        "width": 896,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        -480
+      ],
+      "id": "2729cfac-190c-4588-87f7-d23cc4fa0eb6",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Receive and check the file\nReads the upload straight from the form node. The file picker accepts anything on purpose, so rejections happen in the workflow.\n**If not an allowed type:** log and reject",
+        "height": 336,
+        "width": 864,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -176
+      ],
+      "id": "cb871dd0-7cfe-49c7-afa1-5111fb404afe",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Verify client and document\nThree gates, each with its own log and rejection: known client, document on this client's checklist, and (earlier) valid file.\n**Always Output Data ON** on both searches so a miss reaches its IF",
+        "height": 368,
+        "width": 864
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -304
+      ],
+      "id": "60c84a22-3367-4233-9553-228ac55795fb",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DocumentUploadForm": {
+      "main": [
+        [
+          {
+            "node": "SetConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SetConfig": {
+      "main": [
+        [
+          {
+            "node": "CleanUploadInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CleanUploadInput": {
+      "main": [
+        [
+          {
+            "node": "IsFileValid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsFileValid?": {
+      "main": [
+        [
+          {
+            "node": "FindClientForUpload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LogInvalidFile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogInvalidFile": {
+      "main": [
+        [
+          {
+            "node": "Reject:InvalidFile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FindClientForUpload": {
+      "main": [
+        [
+          {
+            "node": "IsKnownClient?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsKnownClient?": {
+      "main": [
+        [
+          {
+            "node": "FindDocumentRecord",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LogUnknownClient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogUnknownClient": {
+      "main": [
+        [
+          {
+            "node": "Reject:UnknownClient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FindDocumentRecord": {
+      "main": [
+        [
+          {
+            "node": "IsDocumentRequired?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsDocumentRequired?": {
+      "main": [
+        [
+          {
+            "node": "MarkDocumentReceived",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LogUnexpectedDocument",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogUnexpectedDocument": {
+      "main": [
+        [
+          {
+            "node": "Reject:UnexpectedDocument",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarkDocumentReceived": {
+      "main": [
+        [
+          {
+            "node": "LogDocumentReceived",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogDocumentReceived": {
+      "main": [
+        [
+          {
+            "node": "FindPendingDocuments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FindPendingDocuments": {
+      "main": [
+        [
+          {
+            "node": "CountPending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CountPending": {
+      "main": [
+        [
+          {
+            "node": "AreAllReceived?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AreAllReceived?": {
+      "main": [
+        [
+          {
+            "node": "MarkClientReady",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ShowPartial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarkClientReady": {
+      "main": [
+        [
+          {
+            "node": "LogClientReady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogClientReady": {
+      "main": [
+        [
+          {
+            "node": "NotifyStaffReady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NotifyStaffReady": {
+      "main": [
+        [
+          {
+            "node": "ShowAllDone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Banjul",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "PRLM7y8N9aq8F1lz"
+  },
+  "versionId": "60ee221c-e860-4479-92c3-a52afb87f9fd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "nodeGroups": [],
+  "id": "LK2lcDdi4NZ163YH",
+  "tags": []
+}

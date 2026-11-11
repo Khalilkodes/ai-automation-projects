@@ -1,0 +1,1234 @@
+{
+  "name": "[Onboarding] Main | Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        80
+      ],
+      "id": "22bde7d9-030c-4067-b84b-e61255d33d83",
+      "name": "DailySchedule"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        272
+      ],
+      "id": "aebb8615-19ae-45e4-bac5-e92c745990e6",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fa3c663b-ac7b-44d5-aba0-5a6f2c5d3aec",
+              "name": "reminder_1_days",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "7a8f5795-58d8-4b5f-8157-4c7a4b9c5bab",
+              "name": "reminder_2_days",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "1a6152f7-011a-4d56-8ede-d2b0a27496a1",
+              "name": "escalation_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "bfe64c88-7b28-43b8-95f3-f3dbe0d952c2",
+              "name": "firm_name",
+              "value": "Riverside Bookkeeping",
+              "type": "string"
+            },
+            {
+              "id": "31ed80ff-b48d-4546-94ed-eeaa65787382",
+              "name": "from_email",
+              "value": "onboarding@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "97e41b66-0432-4ced-b8d5-67d764f5e02d",
+              "name": "staff_email",
+              "value": "staff@riverside-books.example",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        256,
+        176
+      ],
+      "id": "4dba918f-f14e-442f-b93c-186f987ccb06",
+      "name": "SetConfig"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "search",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "returnAll": true,
+        "options": {
+          "where": "(status,eq,awaiting_documents)"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        480,
+        176
+      ],
+      "id": "8ff7234e-7eaf-450a-a493-290a92094b67",
+      "name": "FindAwaitingClients",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('SetConfig').first().json;\n\n// NocoDB returns created_at as \"YYYY-MM-DD HH:mm:ss\" with no time zone.\n// Treat it as UTC (the workflow time zone is Africa/Banjul, which is UTC+0).\nconst parse = (v) => {\n  if (!v) return null;\n  let s = String(v);\n  if (!/[zZ]|[+-]\\d\\d:?\\d\\d$/.test(s)) s = s.replace(' ', 'T') + 'Z';\n  const d = new Date(s);\n  return isNaN(d) ? null : d;\n};\n\nconst now = Date.now();\nconst out = [];\n\nfor (const item of $input.all()) {\n  const row = item.json;\n  const f = row.fields ?? {};\n\n  // Fail loudly: a row we can't update later must not be silently skipped.\n  if (row.id === undefined || row.id === null) {\n    throw new Error('Client row has no id: ' + JSON.stringify(f.email));\n  }\n\n  const created = parse(f.created_at);\n  if (!created) continue; // no usable signup date, so nothing to decide\n\n  const days = Math.floor((now - created.getTime()) / 86400000);\n\n  // Pick the most advanced step that is due and not yet done.\n  let action = null;\n  if (!f.escalated_at && days >= Number(cfg.escalation_days)) action = 'escalate';\n  else if (!f.reminder_2_sent_at && days >= Number(cfg.reminder_2_days)) action = 'reminder_2';\n  else if (!f.reminder_1_sent_at && days >= Number(cfg.reminder_1_days)) action = 'reminder_1';\n\n  if (!action) continue; // nothing due for this client today\n\n  out.push({\n    json: {\n      rowId: row.id,\n      email: f.email,\n      full_name: f.full_name,\n      created_at: f.created_at,\n      days,\n      action,\n    },\n  });\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        176
+      ],
+      "id": "66149143-b082-41b3-baaa-27f1b22b7b8f",
+      "name": "DecideAction"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "reminder_1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "fb04c53c-ec51-4b8a-8512-c7a4616a980d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reminder_1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0d9d9f85-77ff-4adf-b0de-ceb5fab54bff",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "reminder_2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reminder_2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a149da9d-3fe9-411d-99aa-7015ba237f91",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "escalate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalate"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        928,
+        160
+      ],
+      "id": "55967b95-4d80-4c80-8e4d-332708f0befe",
+      "name": "RouteAction"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('SetConfig').first().json.from_email }}",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Reminder: documents needed for your onboarding",
+        "html": "=Hi {{ $json.full_name }},\n\nA quick reminder: we're still waiting on your onboarding documents. Please reply to your welcome email with them attached.\n\n{{ $('SetConfig').first().json.firm_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        -16
+      ],
+      "id": "a7d9218b-ac2c-4cd3-9a71-32db63598f61",
+      "name": "SendReminder1",
+      "webhookId": "afe9c409-1e30-41e3-a535-88ea727f3d2d",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "id": "={{ $('DecideAction').item.json.rowId }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reminder_1_sent_at": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_name",
+              "displayName": "business_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_type",
+              "displayName": "business_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_1_sent_at",
+              "displayName": "reminder_1_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_2_sent_at",
+              "displayName": "reminder_2_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1584,
+        -16
+      ],
+      "id": "c95aed4e-a4d2-422d-af85-e685301c86d8",
+      "name": "MarkReminder1Sent",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('DecideAction').item.json.email }}",
+            "event": "reminder_1_sent",
+            "details": "first reminder sent",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1808,
+        -16
+      ],
+      "id": "9f425f55-d5c2-44e4-819c-80afe911b5ff",
+      "name": "LogReminder1",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $('SetConfig').first().json.from_email }}",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Reminder2: documents needed for your onboarding",
+        "html": "=Hi {{ $json.full_name }},\n\nA quick reminder: we're still waiting on your onboarding documents. Please reply to your welcome email with them attached.\n\n{{ $('SetConfig').first().json.firm_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        176
+      ],
+      "id": "d642ddcf-c363-49ee-99c0-efc2b6c2c95f",
+      "name": "SendReminder2",
+      "webhookId": "1d8eed46-65d5-42f7-8d7a-6c25d10a1647",
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "id": "={{ $('DecideAction').item.json.rowId }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reminder_2_sent_at": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_name",
+              "displayName": "business_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_type",
+              "displayName": "business_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_1_sent_at",
+              "displayName": "reminder_1_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_2_sent_at",
+              "displayName": "reminder_2_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1584,
+        176
+      ],
+      "id": "9670dbdd-8aa0-45d3-b3ae-ae998a430b16",
+      "name": "MarkReminder2Sent",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_email": "={{ $('DecideAction').item.json.email }}",
+            "event": "reminder_2_sent_at",
+            "details": "second reminder sent",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1824,
+        176
+      ],
+      "id": "03c05b2d-eb93-406c-8fd6-2ee22752baa6",
+      "name": "LogReminder2",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "=",
+        "toEmail": "={{ $('SetConfig').first().json.staff_email }}",
+        "subject": "=Client stalled: {{ $json.email }}",
+        "html": "={{ $json.full_name }} ({{ $json.email }}) has had no documents for {{ $json.days }} days. Please follow up directly.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        384
+      ],
+      "id": "46aad0da-1dd8-4b3b-873c-e69b9843a619",
+      "name": "AlertStaffEscalation",
+      "webhookId": "94bcd947-3bd1-419e-9b59-1cbdb0a826d7",
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9okmynepiwpx12",
+          "mode": "list",
+          "cachedResultName": "clients",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9okmynepiwpx12"
+        },
+        "id": "={{ $('DecideAction').item.json.rowId }}",
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "escalated",
+            "escalated_at": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_name",
+              "displayName": "business_name",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "business_type",
+              "displayName": "business_type",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_1_sent_at",
+              "displayName": "reminder_1_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "reminder_2_sent_at",
+              "displayName": "reminder_2_sent_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1568,
+        384
+      ],
+      "id": "5fea7d01-89f9-4a97-8938-47d44ea8c1b5",
+      "name": "MarkEscalated",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": {
+          "__rl": true,
+          "value": "wqgc0u25",
+          "mode": "list",
+          "cachedResultName": "Default Workspace",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25"
+        },
+        "projectId": {
+          "__rl": true,
+          "value": "pdjni2x11344tpt",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "m9ok3ma6yuz7z8q",
+          "mode": "list",
+          "cachedResultName": "activity_log",
+          "cachedResultUrl": "http://nocodb:8080/#/wqgc0u25/pdjni2x11344tpt/m9ok3ma6yuz7z8q"
+        },
+        "fieldsMapper": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event": "escalated",
+            "details": "staff alerted after no response",
+            "timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "client_email": "={{ $('DecideAction').item.json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string",
+              "display": true,
+              "defaultMatch": false,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 4,
+      "position": [
+        1808,
+        384
+      ],
+      "id": "48cf894d-a923-48a6-ba50-83dcb0eaee05",
+      "name": "LogEscalation",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "1UDm3dwSkNWVIysX",
+          "name": "NocoDB Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Daily Reminders\nEvery day at 09:00 (Africa/Banjul), find clients still missing documents and send reminder 1, reminder 2, or a staff escalation. Each step happens once.\n**Off by default until the demo:** activating it emails every waiting client.",
+        "height": 192,
+        "width": 496,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -336
+      ],
+      "id": "cc102a23-824a-46fa-99d8-6f4c7a3c226c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Triggers and config\nTwo ways to start: the daily schedule and a manual button for testing.\n**Thresholds in SetConfig:** reminder 1 at 2 days, reminder 2 at 5, escalation at 7. Tune them here, never in code.",
+        "height": 496,
+        "width": 432,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -80
+      ],
+      "id": "3c14c7f8-a154-401b-a642-cd331acd6d93",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Find and decide\n**Logic:** pick the furthest step that is due and not yet recorded. Past day 7 with no reminders goes straight to escalation (deliberate simplification).\n**Why it never repeats:** each step writes its own timestamp, and the code skips steps already done.\n**Fails loudly:** a row with no id throws, so staff are alerted",
+        "height": 496,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -80
+      ],
+      "id": "b7ca2fbf-80ab-4dad-a565-ec6cfebed370",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Route\nSwitch sends each client down one path. Clients with nothing due produce no item at all.",
+        "height": 416,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -64
+      ],
+      "id": "72cec7f0-ac88-44f1-887d-8724f6439736",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## 6. Escalation\nEmail staff, set status \"escalated\" \n(stops repeat alerts),\n record the time, log it.",
+        "height": 192,
+        "width": 912,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        352
+      ],
+      "id": "4cc5992b-9cc1-4e87-b5d5-7e7f853678b0",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## 5. Reminder 2\n**Order:** send email,\n record timestamp, log. \nRetry On Fail on the email.\n",
+        "height": 176,
+        "width": 912,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        160
+      ],
+      "id": "0875946f-5a87-497a-b509-1c2ce5f85727",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## 4. Reminder 1\n**Order:** send email,\n record timestamp, log. \nRetry On Fail on the email.\n",
+        "height": 192,
+        "width": 912,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -48
+      ],
+      "id": "5286eb3d-4e17-476d-9444-0872c45024a4",
+      "name": "Sticky Note7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "SetConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DailySchedule": {
+      "main": [
+        [
+          {
+            "node": "SetConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SetConfig": {
+      "main": [
+        [
+          {
+            "node": "FindAwaitingClients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FindAwaitingClients": {
+      "main": [
+        [
+          {
+            "node": "DecideAction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DecideAction": {
+      "main": [
+        [
+          {
+            "node": "RouteAction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RouteAction": {
+      "main": [
+        [
+          {
+            "node": "SendReminder1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SendReminder2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AlertStaffEscalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendReminder1": {
+      "main": [
+        [
+          {
+            "node": "MarkReminder1Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarkReminder1Sent": {
+      "main": [
+        [
+          {
+            "node": "LogReminder1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendReminder2": {
+      "main": [
+        [
+          {
+            "node": "MarkReminder2Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarkReminder2Sent": {
+      "main": [
+        [
+          {
+            "node": "LogReminder2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AlertStaffEscalation": {
+      "main": [
+        [
+          {
+            "node": "MarkEscalated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarkEscalated": {
+      "main": [
+        [
+          {
+            "node": "LogEscalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Banjul",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "PRLM7y8N9aq8F1lz"
+  },
+  "versionId": "46b7b728-6c92-4eae-a2e0-f83bd7f21cb4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "nodeGroups": [],
+  "id": "JMtd9IrmJdrMd7mD",
+  "tags": []
+}
