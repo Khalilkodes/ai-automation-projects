@@ -1,0 +1,150 @@
+{
+  "name": "[Shared] Error handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8245779d-1f82-4921-9d41-7299cb330ef9",
+      "name": "ErrorTrigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64b0890d-55fa-405b-a13f-3a685acd2d37",
+              "name": "workflow_name",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "6d16a40d-e8af-4d74-a4ec-9cff78f2e4b8",
+              "name": "failed_node",
+              "value": "={{ $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            },
+            {
+              "id": "5f65ad8e-3557-462c-b791-df0404c768b5",
+              "name": "error_messag",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "a4c71199-b910-4ac9-bfb2-94508b4a4a98",
+              "name": "execution_url",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            },
+            {
+              "id": "8eb15701-0ef8-4c61-87e2-fe3d2b44aec6",
+              "name": "alert_to",
+              "value": "staff@riverside-books.example",
+              "type": "string"
+            },
+            {
+              "id": "c784af57-ada1-4275-a8d6-f9f576950f9e",
+              "name": "alert_from",
+              "value": "alerts@riverside-books.example",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0291d1b0-e1c5-4570-8e35-a57c8570440d",
+      "name": "BuildAlert"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.alert_from }}",
+        "toEmail": "={{ $json.alert_to }}",
+        "subject": "=[ALERT] {{ $json.workflow_name }} failed at {{ $json.failed_node }}",
+        "html": "=Workflow: {{ $json.workflow_name }}\nFailed node: {{ $json.failed_node }}\nError: {{ $json.error_message }}\nExecution: {{ $json.execution_url }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "79fa328e-68a2-4213-8e14-df0645b94f72",
+      "name": "SendErrorAlert",
+      "webhookId": "d9c29a71-959c-4dfd-b422-e6b7fffda9ab",
+      "credentials": {
+        "smtp": {
+          "id": "9OCPbYkWDN5PLpch",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Shared error handler\nAny workflow that names this as its Error Workflow triggers it on failure. Staff get an email with the workflow name, failing node, error message and execution link.\nUsed by every project. Change alert wording here once.\n**Tested:** NocoDB stopped on purpose, alert received",
+        "height": 464,
+        "width": 768,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -304
+      ],
+      "id": "0f02e1fd-cf08-430e-87cd-570729ec8280",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "ErrorTrigger": {
+      "main": [
+        [
+          {
+            "node": "BuildAlert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildAlert": {
+      "main": [
+        [
+          {
+            "node": "SendErrorAlert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "781ba8a2-7ba8-4dd6-a1b0-5351fabba31e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "nodeGroups": [],
+  "id": "PRLM7y8N9aq8F1lz",
+  "tags": []
+}
