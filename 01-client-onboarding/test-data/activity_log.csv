@@ -1,0 +1,21 @@
+client_email,event,details,timestamp
+amara.colley@example.com,client_created,intake form received,2026-10-22 11:20:34
+amara.colley@example.com,welcome_email_sent,welcome email sent,2026-10-22 11:20:34
+amara.colley@example.com,reminder_1_sent,first reminder sent,2026-10-24 11:20:34
+amara.colley@example.com,client_ready,all documents received,2026-10-24 11:20:34
+lamin.jallow@example.com,client_created,intake form received,2026-10-31 11:20:34
+lamin.jallow@example.com,welcome_email_sent,welcome email sent,2026-10-31 11:20:35
+fatou.ceesay@example.com,client_created,intake form received,2026-10-28 11:20:35
+fatou.ceesay@example.com,welcome_email_sent,welcome email sent,2026-10-28 11:20:35
+fatou.ceesay@example.com,reminder_1_sent,first reminder sent,2026-10-30 11:20:35
+ousman.bojang@example.com,client_created,intake form received,2026-10-25 11:20:35
+ousman.bojang@example.com,welcome_email_sent,welcome email sent,2026-10-25 11:20:35
+ousman.bojang@example.com,reminder_1_sent,first reminder sent,2026-10-27 11:20:35
+ousman.bojang@example.com,reminder_2_sent,second reminder sent,2026-10-30 11:20:35
+isatou.njie@example.com,client_created,intake form received,2026-10-19 11:20:35
+isatou.njie@example.com,welcome_email_sent,welcome email sent,2026-10-19 11:20:35
+isatou.njie@example.com,reminder_1_sent,first reminder sent,2026-10-21 11:20:35
+isatou.njie@example.com,reminder_2_sent,second reminder sent,2026-10-24 11:20:35
+isatou.njie@example.com,escalated,staff alerted after no response,2026-10-26 11:20:35
+modou.sanneh@example.com,client_created,intake form received,2026-11-03 11:20:35
+modou.sanneh@example.com,welcome_email_sent,welcome email sent,2026-11-03 11:20:35

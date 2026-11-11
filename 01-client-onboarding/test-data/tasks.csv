@@ -1,0 +1,13 @@
+client_email,task,owner,due_date,done
+amara.colley@example.com,Collect documents,Binta,2026-10-24,true
+amara.colley@example.com,Schedule kickoff call,Ebrima,2026-10-26,true
+lamin.jallow@example.com,Collect documents,Binta,2026-11-07,false
+lamin.jallow@example.com,Schedule kickoff call,Ebrima,2026-11-12,false
+fatou.ceesay@example.com,Collect documents,Binta,2026-11-04,false
+fatou.ceesay@example.com,Schedule kickoff call,Ebrima,2026-11-09,false
+ousman.bojang@example.com,Collect documents,Binta,2026-11-02,false
+ousman.bojang@example.com,Schedule kickoff call,Ebrima,2026-11-07,false
+isatou.njie@example.com,Collect documents,Binta,2026-10-31,false
+isatou.njie@example.com,Schedule kickoff call,Ebrima,2026-11-05,false
+modou.sanneh@example.com,Collect documents,Binta,2026-11-10,false
+modou.sanneh@example.com,Schedule kickoff call,Ebrima,2026-11-15,false

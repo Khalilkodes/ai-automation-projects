@@ -1,0 +1,8 @@
+case_id,scenario,full_name,email,business_name,business_type,expected_result
+1,happy path,Kebba Touray,kebba.touray@example.com,Touray Bakery,retail,client created and welcome email sent
+2,missing one document,Sainabou Darboe,sainabou.darboe@example.com,Darboe Beauty Salon,services,upload 3 of 4 documents and status stays awaiting_documents
+3,missing everything,Pa Jobe,pa.jobe@example.com,Jobe Fishing Supplies,retail,no uploads so reminders fire on schedule
+4,duplicate email,Lamin Jallow,lamin.jallow@example.com,Jallow Auto Parts,retail,rejected as duplicate and staff notified
+5,invalid email,Binta Manneh,binta-manneh-at-example,Manneh Stationery,retail,rejected with a clear message
+6,wrong file type,Alieu Cham,alieu.cham@example.com,Cham Electronics,retail,upload the .txt file and it is rejected
+8,large business,Haddy Sowe,haddy.sowe@example.com,Sowe Logistics Group,large,checklist has 6 documents not 4

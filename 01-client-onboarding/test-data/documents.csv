@@ -1,0 +1,25 @@
+client_email,doc_type,status,received_at
+amara.colley@example.com,id_document,received,2026-10-23 11:20:34
+amara.colley@example.com,business_registration,received,2026-10-23 11:20:34
+amara.colley@example.com,bank_statements,received,2026-10-24 11:20:34
+amara.colley@example.com,tax_records,received,2026-10-24 11:20:34
+lamin.jallow@example.com,id_document,pending,
+lamin.jallow@example.com,business_registration,pending,
+lamin.jallow@example.com,bank_statements,pending,
+lamin.jallow@example.com,tax_records,pending,
+fatou.ceesay@example.com,id_document,received,2026-10-29 11:20:34
+fatou.ceesay@example.com,business_registration,pending,
+fatou.ceesay@example.com,bank_statements,pending,
+fatou.ceesay@example.com,tax_records,pending,
+ousman.bojang@example.com,id_document,received,2026-10-26 11:20:34
+ousman.bojang@example.com,business_registration,received,2026-10-26 11:20:34
+ousman.bojang@example.com,bank_statements,pending,
+ousman.bojang@example.com,tax_records,pending,
+isatou.njie@example.com,id_document,pending,
+isatou.njie@example.com,business_registration,pending,
+isatou.njie@example.com,bank_statements,pending,
+isatou.njie@example.com,tax_records,pending,
+modou.sanneh@example.com,id_document,pending,
+modou.sanneh@example.com,business_registration,pending,
+modou.sanneh@example.com,bank_statements,pending,
+modou.sanneh@example.com,tax_records,pending,

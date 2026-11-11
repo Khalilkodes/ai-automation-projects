@@ -1,0 +1,7 @@
+full_name,email,business_name,business_type,status,created_at,reminder_1_sent_at,reminder_2_sent_at,escalated_at
+Amara Colley,amara.colley@example.com,Colley Fresh Produce,retail,ready,2026-10-22 11:20:33,2026-10-24 11:20:34,,
+Lamin Jallow,lamin.jallow@example.com,Jallow Auto Parts,retail,awaiting_documents,2026-10-31 11:20:34,,,
+Fatou Ceesay,fatou.ceesay@example.com,Ceesay Tailoring,services,awaiting_documents,2026-10-28 11:20:34,2026-10-30 11:20:34,,
+Ousman Bojang,ousman.bojang@example.com,Bojang Hardware,retail,awaiting_documents,2026-10-25 11:20:34,2026-10-27 11:20:34,2026-10-30 11:20:34,
+Isatou Njie,isatou.njie@example.com,Njie Catering,hospitality,escalated,2026-10-19 11:20:34,2026-10-21 11:20:34,2026-10-24 11:20:34,2026-10-26 11:20:34
+Modou Sanneh,modou.sanneh@example.com,Sanneh Transport,transport,awaiting_documents,2026-11-03 11:20:34,,,
