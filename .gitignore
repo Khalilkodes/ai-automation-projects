@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.tls/
+*.sqlite
+*.db
+*.log
+*.bak
+.DS_Store
+exports-private/
