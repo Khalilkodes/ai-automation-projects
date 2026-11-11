@@ -1,0 +1,34 @@
+flowchart TD
+    A[Client Intake Form] --> B{Valid fields?}
+    B -->|No| B1[Reject with message and log]
+    B -->|Yes| C{Email already a client?}
+    C -->|Yes| C1[Log duplicate and notify staff]
+    C -->|No| D[Create client, checklist and tasks<br/>status: awaiting_documents]
+    D --> E[Welcome email]
+    E --> F[Event Log]
+    B1 --> F
+    C1 --> F
+
+    G[Daily Schedule] --> H[Find clients awaiting documents]
+    H --> I{"Days since intake past threshold<br/>and step not yet done?"}
+    I -->|Reminder 1| J[Send reminder and record it]
+    I -->|Reminder 2| K[Send reminder and record it]
+    I -->|Escalation| L[Alert staff, status: escalated]
+    J --> F
+    K --> F
+    L --> F
+
+    M[Document Upload Form] --> N{Known client and valid file?}
+    N -->|No| N1[Reject with message]
+    N -->|Yes| O[Update checklist]
+    N1 --> F
+    O --> P{All documents received?}
+    P -->|No| Q[Keep pending]
+    P -->|Yes| R[Status: ready]
+    R --> S[Notify staff]
+    Q --> F
+    S --> F
+
+    B -. Errors .-> T[Shared Error Handler]
+    H -. Errors .-> T
+    N -. Errors .-> T
